@@ -1,0 +1,94 @@
+--DATA CLEANING
+--Dealing with Nulls
+--1. Create Temporary tables
+DROP TABLE IF EXISTS #temp_runner_table;
+CREATE TABLE #temp_runner_table(
+"order_id" INTEGER,
+  "runner_id" INTEGER,
+  "pickup_time" VARCHAR (19), 
+  "distance" NVARCHAR (255),
+  "duration" NVARCHAR (255),
+  "cancellation" NVARCHAR (255)
+)
+
+INSERT INTO #temp_runner_table
+SELECT *
+FROM runner_orders
+
+SELECT order_id, runner_id, 
+	CASE WHEN pickup_time like '%null%' THEN ' ' ELSE pickup_time END AS pickup_time,
+	CASE WHEN distance like '%null%' THEN ' '
+		WHEN distance like '%km%' THEN TRIM ('km' from distance)
+		ELSE distance END AS distance,
+	CAST((CASE WHEN duration like '%null%' THEN ' '
+		 WHEN duration like '%mins%' THEN TRIM ('mins' from duration)
+		 WHEN duration like '%minutes%' THEN TRIM ('minutes' from duration)
+		 WHEN duration like '%minute%' THEN TRIM ('minute' from duration)
+		 ELSE duration END) AS int)  AS duration,
+	CASE WHEN cancellation like '%null%' THEN ' '
+		WHEN cancellation IS NULL THEN ' '
+		ELSE cancellation END AS cancellation
+FROM #temp_runner_table
+
+UPDATE #temp_runner_table
+SET pickup_time = CASE WHEN pickup_time like '%null%' THEN ' ' ELSE pickup_time END
+
+UPDATE #temp_runner_table
+SET distance = CASE WHEN distance like '%null%' THEN ' '
+		WHEN distance like '%km%' THEN TRIM ('km' from distance)
+		ELSE distance END
+
+UPDATE #temp_runner_table
+SET duration = CAST((CASE WHEN duration like '%null%' THEN ' '
+		 WHEN duration like '%mins%' THEN TRIM ('mins' from duration)
+		 WHEN duration like '%minutes%' THEN TRIM ('minutes' from duration)
+		 WHEN duration like '%minute%' THEN TRIM ('minute' from duration)
+		 ELSE duration END) AS int)
+
+UPDATE #temp_runner_table
+SET cancellation = CASE WHEN cancellation like '%null%' THEN ' '
+		WHEN cancellation IS NULL THEN ' '
+		ELSE cancellation END
+
+ALTER TABLE #temp_runner_table
+ALTER COLUMN distance VARCHAR(10)
+
+ALTER TABLE #temp_runner_table
+ALTER COLUMN pickup_time VARCHAR(19)
+
+SELECT *
+FROM #temp_runner_table
+
+
+DROP TABLE IF EXISTS #temp_customer_orders;
+CREATE TABLE #temp_customer_orders(
+"order_id" INTEGER,
+  "customer_id" INTEGER,
+  "pizza_id" INTEGER,
+  "exclusions" NVARCHAR (255),
+  "extras" NVARCHAR (255),
+  "order_time" VARCHAR (19))
+
+  INSERT INTO #temp_customer_orders
+  SELECT *
+  FROM customer_orders
+
+  SELECT *
+  FROM #temp_customer_orders
+
+  SELECT order_id, customer_id, pizza_id,
+		CASE WHEN exclusions LIKE '%null%' THEN ' ' 
+		ELSE exclusions END AS exclusions,
+		CASE WHEN extras LIKE '%null%' THEN ' '
+		WHEN extras is NULL THEN ' '
+		ELSE extras END AS extras, order_time
+  FROM #temp_customer_orders
+
+UPDATE #temp_customer_orders 
+SET exclusions = CASE WHEN exclusions LIKE '%null%' THEN ' ' 
+		ELSE exclusions END
+
+UPDATE #temp_customer_orders
+SET extras = CASE WHEN extras LIKE '%null%' THEN ' '
+		WHEN extras is NULL THEN ' '
+		ELSE extras END
