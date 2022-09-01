@@ -1,0 +1,68 @@
+--RUNNER AND CUSTOMER EXPERIENCE
+--1. How many runners signed up for each 1 week period? (i.e. week starts 2021-01-01)
+
+SELECT DATEPART(week, registration_date) as 'Week of registration',
+       COUNT(runner_id) as 'Number of runners'
+FROM runners
+GROUP BY DATEPART(week, registration_date);
+
+
+-- 2. What was the average time in minutes it took for each runner to arrive at the Pizza Runner HQ to pickup the order?
+WITH t1 AS(
+SELECT runner_id, co.order_time, pickup_time,  DATEDIFF(MINUTE, order_time, pickup_time) AS min_time
+FROM #temp_customer_orders AS co
+INNER JOIN #temp_runner_table AS rt
+ON co.order_id = rt.order_id
+WHERE cancellation NOT IN ('Restaurant Cancellation', 'Customer Cancellation'))
+
+SELECT runner_id, ROUND(AVG(min_time), 0) AS average_time
+FROM t1
+GROUP BY runner_id
+ORDER BY runner_id
+
+--3. Is there any relationship between the number of pizzas and how long the order takes to prepare?
+--How long does it take to make one pizza
+
+WITH t1 AS(
+SELECT co.order_id, COUNT(co.order_id) AS count_order,   
+		DATEDIFF(MINUTE, order_time, pickup_time) AS prep_time
+FROM #temp_customer_orders AS co
+INNER JOIN #temp_runner_table AS rt
+ON co.order_id = rt.order_id
+GROUP BY co.order_id, cancellation, DATEDIFF(MINUTE, order_time, pickup_time)
+HAVING cancellation NOT IN ('Restaurant Cancellation', 'Customer Cancellation'))
+
+SELECT count_order, AVG(prep_time) AS avg_prep_time
+FROM t1
+GROUP BY count_order
+
+--4. What was the average distance travelled for each customer?
+SELECT customer_id, ROUND(AVG(CAST (distance AS float)), 2) AS average_distance
+FROM #temp_customer_orders AS co
+INNER JOIN #temp_runner_table AS rt
+ON co.order_id = rt.order_id 
+GROUP BY customer_id, cancellation
+HAVING cancellation NOT IN ('Restaurant Cancellation', 'Customer Cancellation')
+
+--5. What was the difference between the longest and shortest delivery times for all orders?
+SELECT MAX(CAST (duration AS integer)) - MIN(CAST(duration AS integer)) AS duration_diff
+FROM #temp_customer_orders AS co
+INNER JOIN #temp_runner_table AS rt
+ON co.order_id = rt.order_id 
+WHERE cancellation NOT IN ('Restaurant Cancellation', 'Customer Cancellation')
+
+--6. What was the average speed for each runner for each delivery and do you notice any trend for these values?
+SELECT runner_id,  ROUND(CAST(distance AS float)/ (CAST (duration AS float)/60 ), 2) AS average_speed
+FROM #temp_runner_table
+GROUP BY runner_id, distance, duration, cancellation
+HAVING cancellation NOT IN ('Restaurant Cancellation', 'Customer Cancellation')
+
+
+--7. What is the successful delivery percentage for each runner?
+SELECT runner_id, (CAST( delivered_order AS float) / CAST(total_orders AS float)) * 100 AS percentage_delivery
+FROM(
+SELECT runner_id, 
+	  SUM(CASE WHEN cancellation = ' ' THEN 1 ELSE 0 END) AS delivered_order, 
+	  COUNT(*) AS total_orders
+FROM #temp_runner_table
+GROUP BY runner_id) sub
