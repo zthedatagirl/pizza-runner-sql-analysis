@@ -1,0 +1,112 @@
+--PRICINGS & RATINGS
+--1. If a Meat Lovers pizza costs $12 and Vegetarian costs $10 and there were no charges for changes - how much money has Pizza Runner made so far if there are no delivery fees?
+SELECT CONCAT('$', SUM(CASE WHEN pizza_id = 1 THEN 12 ELSE 10 END)) AS 'total money'
+FROM #temp_customer_orders AS co
+JOIN #temp_runner_table AS rt
+ON co.order_id = rt.order_id
+WHERE cancellation = ' ' 
+
+--2. What if there was an additional $1 charge for any pizza extras?
+	--Add cheese is $1 extra
+
+ WITH t1 AS(
+SELECT SUM(CASE WHEN pizza_id = 1 THEN 12 
+						ELSE 10 END) AS total_money
+FROM #temp_customer_orders AS co
+JOIN #temp_runner_table AS rt
+ON co.order_id = rt.order_id
+WHERE cancellation = ' ' ),
+
+
+t2 AS(SELECT SUM(CASE WHEN extras = '1' THEN 1
+			WHEN extras = '1, 4' THEN 2
+			ELSE 0 END) AS topping_fee
+FROM #temp_customer_orders AS co
+JOIN #temp_runner_table AS rt
+ON co.order_id = rt.order_id
+WHERE cancellation = ' ' )
+
+SELECT CONCAT('$', total_money + topping_fee) AS total_fee
+FROM t1, t2
+
+
+--3. The Pizza Runner team now wants to add an additional ratings system 
+	--that allows customers to rate their runner, how would you design an 
+	--additional table for this new dataset - generate a schema for this 
+	--new table and insert your own data for ratings for each successful 
+	--customer order between 1 to 5.
+
+DROP TABLE IF EXISTS #ratings_table
+CREATE TABLE #ratings_table(
+"order_id" INTEGER,
+"runner_id" INTEGER,
+"customer_id" INTEGER,
+"ratings" INTEGER,
+"comments" NVARCHAR(255))
+
+INSERT INTO #ratings_table
+	("order_id", "runner_id", "customer_id", "ratings", "comments")
+VALUES
+	(1, 1, 101, 4, 'The delivery was quite fast'),
+	(2, 1, 101, 1, 'The food arrived cold'),
+	(3, 1, 102, 3, 'The meal was soggy but the rider apologized'),
+	(3, 1, 102, 3, 'It was okay'),
+	(4, 2, 103, 1, 'The delivery took too long'),
+	(4, 2, 103, 1, 'The food was terrible'),
+	(4, 2, 103, 3, 'The delivery took long but the food was delicious'),
+	(5, 3, 104, 2, 'I do not know'),
+	(7, 2, 105, 3, 'okay'),
+	(8, 2, 102, 4, 'I enjoyed the food'),
+	(10, 1, 104, 5, 'The delivery was very fast'),
+	(10, 1, 104, 5, 'The delivery was super fast')
+
+
+SELECT *
+FROM #ratings_table
+ORDER BY ratings DESC
+
+--4. Using your newly generated table - can you join all of the 
+--information together to form a table which has the following 
+--information for successful deliveries?
+--customer_id
+--order_id
+--runner_id
+--rating
+--order_time
+--pickup_time
+--Time between order and pickup
+--Delivery duration
+--Average speed
+--Total number of pizzas
+
+SELECT DISTINCT co.customer_id, rt.order_id, rt.runner_id, ratings, comments, order_time, pickup_time, 
+				DATEDIFF(MINUTE, order_time, pickup_time) AS time_bet_ord_pickup, duration,
+				ROUND(CAST(distance AS float)/ (CAST (duration AS float)/60 ), 2) AS average_speed,
+				COUNT(pizza_id) AS total_num_pizza
+FROM #ratings_table AS rt
+LEFT JOIN #temp_customer_orders AS co
+ON rt.order_id = co.order_id
+LEFT JOIN #temp_runner_table AS tr
+ON rt.order_id = tr.order_id
+GROUP BY co.customer_id, rt.order_id, rt.runner_id, ratings, comments, order_time, pickup_time, duration, cancellation,
+		ROUND(CAST(distance AS float)/ (CAST (duration AS float)/60 ), 2)
+HAVING cancellation = ' '
+
+
+--5. If a Meat Lovers pizza was $12 and Vegetarian $10 fixed prices 
+--with no cost for extras and each runner is paid $0.30 per kilometre 
+--traveled - how much money does Pizza Runner have left over after these deliveries?
+
+WITH t1 AS(
+SELECT SUM(CASE WHEN pizza_id = 1 THEN 12 
+						ELSE 10 END) AS total_money
+FROM #temp_customer_orders AS co
+JOIN #temp_runner_table AS rt
+ON co.order_id = rt.order_id
+WHERE cancellation = ' ' ),
+
+t2 AS(SELECT SUM(0.30 * CAST (distance AS float)) AS runner_fee
+FROM #temp_runner_table)
+
+SELECT CONCAT('$', total_money - runner_fee) AS total_fee
+FROM t1, t2
