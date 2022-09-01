@@ -1,0 +1,59 @@
+--INGREDIENT OPTIMIZATION
+
+--1. What are the standard ingredients for each pizza?
+SELECT TOP 2 pizza_id,  CASE WHEN pizza_id = 1 THEN 'Meatlovers' ELSE 'Vegetarian' END AS pizza_name, 
+								CASE WHEN pizza_id = 1
+								THEN 'Bacon, BBQ Sauce, Beef, Cheese, Chicken, Mushrooms, Pepperoni, Salami' 
+								ELSE 'Cheese, Mushrooms, Onions, Peppers, Tomato Sauce, Tomatoes' END AS standard_ingredient
+FROM pizza_toppings AS t
+FULL OUTER JOIN pizza_recipes AS r
+ON t.topping_id = r.pizza_id
+
+--2. What was the most commonly added extra?
+SELECT topping_name
+FROM (SELECT TOP 1 extras, COUNT(*) No_of_extras
+FROM #temp_customer_orders
+GROUP BY extras
+HAVING extras <> ' '
+ORDER BY extras DESC)sub
+LEFT JOIN pizza_toppings AS pt
+ON sub.No_of_extras = pt.topping_id
+WHERE No_of_extras IS NOT NULL
+
+--3. What was the most common exclusion?
+SELECT topping_name
+FROM (SELECT TOP 1 exclusions, COUNT(*) No_of_exclusions
+FROM #temp_customer_orders
+GROUP BY exclusions
+HAVING exclusions <> ' '
+ORDER BY exclusions DESC)sub
+FULL OUTER JOIN pizza_toppings AS pt
+ON sub.No_of_exclusions = pt.topping_id
+WHERE No_of_exclusions IS NOT NULL
+ 
+--4. Generate an order item for each record in the customers_orders table in the format of one of the following:
+--Meat Lovers
+--Meat Lovers - Exclude Beef
+--Meat Lovers - Extra Bacon
+--Meat Lovers - Exclude Cheese, Bacon - Extra Mushroom, Peppers
+SELECT order_id, customer_id, pn.pizza_id, exclusions, extras, order_time, pizza_name,
+		CASE WHEN co.pizza_id = 1 AND co.exclusions = ' ' AND co.extras = ' ' THEN 'Meat lovers'
+			 WHEN co.pizza_id = 2 AND co.exclusions = ' ' AND co.extras = ' ' THEN 'Vegetarian'
+			 WHEN co.pizza_id = 1 AND co.exclusions = '4' AND co.extras = ' ' THEN 'Meat lovers - Exclude Beef'
+			 WHEN co.pizza_id = 2 AND co.exclusions = '4' AND co.extras = ' ' THEN 'Vegetarian - Exclude Beef'
+			 WHEN co.pizza_id = 1 AND co.exclusions = ' ' AND co.extras = '1' THEN 'Meat lovers - Extra Bacon'
+			 WHEN co.pizza_id = 2 AND co.exclusions = ' ' AND co.extras = '1' THEN 'Vegetarian - Extra Bacon'
+			 WHEN co.pizza_id = 1 AND co.exclusions = '4' AND co.extras = '1, 5' THEN 'Exclude Cheese, Bacon - Extra Mushroom, Peppers' 
+			 WHEN co.pizza_id = 1 AND co.exclusions = '2, 6' AND co.extras = '1, 4' THEN 'Meat Lovers - Exclude BBQ Sauce and Mushroom - Extra Bacon and Cheese'
+			  ELSE 'Vegetarian' END AS Order_item
+FROM #temp_customer_orders AS co
+JOIN pizza_names AS pn
+ON co.pizza_id = pn.pizza_id
+
+--5. Generate an alphabetically ordered comma separated ingredient list for each pizza order from the customer_orders table and add a 2x in front of any relevant ingredients
+--For example: "Meat Lovers: 2xBacon, Beef, ... , Salami"
+
+SELECT order_id, customer_id, pizza_id, exclusions, extras, order_time,
+		CASE WHEN pizza_id = 1 THEN 'Meat Lovers: Bacon, BBQ Sauce, Beef, Cheese, Chicken, Mushroom, Pepperoni, Salami'
+			ELSE 'Vegetarians: Cheese, Mushrooms, Onions, Peppers, Tomatoes, Tomato Sauce' END AS Ingredient_list
+FROM #temp_customer_orders
