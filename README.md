@@ -4,7 +4,8 @@
 
 ![pizza runner](https://user-images.githubusercontent.com/107036397/188010947-ea11ecc7-2e60-42b8-8653-f5864877bd68.png)
 
-**Introduction**
+###Introduction
+
 Did you know that over 115 million kilograms of pizza is consumed daily worldwide??? (Well according to Wikipedia anyway…)
 
 Danny was scrolling through his Instagram feed when something really caught his eye - “80s Retro Styling and Pizza Is The Future!”
