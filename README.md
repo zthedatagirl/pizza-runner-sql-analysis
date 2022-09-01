@@ -14,6 +14,13 @@ Danny was sold on the idea, but he knew that pizza alone was not going to help h
 
 Danny started by recruiting “runners” to deliver fresh pizza from Pizza Runner Headquarters (otherwise known as Danny’s house) and also maxed out his credit card to pay freelance developers to build a mobile app to accept orders from customers.
 
+### Available Data
+Because Danny had a few years of experience as a data scientist - he was very aware that data collection was going to be critical for his business’ growth.
+
+He has prepared for us an entity relationship diagram of his database design but requires further assistance to clean his data and apply some basic calculations so he can better direct his runners and optimise Pizza Runner’s operations.
+
+All datasets exist within the pizza_runner database schema - be sure to include this reference within your SQL scripts as you start exploring the data and answering the case study questions.
+
 1. **Data Cleaning** [how I cleaned the data](https://github.com/zthedatagirl/pizza-runner-sql-analysis/blob/main/Data%20Cleaning)
 2. **Pizza Metrics** [Check it out](https://github.com/zthedatagirl/pizza-runner-sql-analysis/blob/81af4a68e9e9b8335699454b49f4630323925439/Pizza%20Metric)
 3. **Runner and Customer Experience** [Check it out](https://github.com/zthedatagirl/pizza-runner-sql-analysis/blob/8e439fa7591b9513a756fce86ed4e2cc5912b83d/Runner%20and%20Customer%20Experience)
