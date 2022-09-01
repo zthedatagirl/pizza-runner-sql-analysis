@@ -1,0 +1,78 @@
+--PIZZA METRICS
+
+--1. How many Pizzas were ordered?
+  SELECT COUNT(pizza_id) AS pizza_nu
+  FROM #temp_customer_orders 
+
+  --2. How many unique customer orders were made?
+  SELECT COUNT(DISTINCT order_id)
+  FROM #temp_customer_orders 
+
+  --3. How many successful orders were delivered by each runner?
+SELECT runner_id, COUNT(pickup_time) AS no_successful_order
+FROM #temp_runner_table
+GROUP BY runner_id, cancellation
+HAVING cancellation NOT IN ( 'Restaurant Cancellation', 'Customer Cancellation')
+ORDER BY runner_id
+
+
+--4. How many of each type of pizza was delivered?
+
+SELECT p.pizza_name, COUNT(p.pizza_id) AS no_of_pizza
+FROM #temp_customer_orders AS co
+INNER JOIN pizza_names AS p
+ON co.pizza_id = p.pizza_id
+INNER JOIN #temp_runner_table AS rt
+ON co.order_id = rt.order_id
+GROUP BY p.pizza_name, cancellation
+HAVING cancellation NOT IN ( 'Restaurant Cancellation', 'Customer Cancellation')
+
+--5. How many Vegetarian and Meatlovers were ordered by each customer?
+SELECT customer_id, SUM(CASE WHEN pizza_id = 1 THEN 1 ELSE 0 END) AS meatlovers,
+					SUM(CASE WHEN pizza_id = 2 THEN 1 ELSE 0 END) AS Vegetarians
+FROM #temp_customer_orders 
+GROUP BY customer_id
+
+--6. What was the maximum number of pizzas delivered in a single order?
+
+WITH t1 (order_id, pizza_count) 
+AS(SELECT sub.order_id, COUNT(sub.max_order) AS pizza_count
+FROM(
+SELECT o.order_id, DENSE_RANK() OVER (ORDER BY o.order_id DESC) AS max_order
+FROM #temp_runner_table AS t
+INNER JOIN #temp_customer_orders AS o
+ON t.order_id = o.order_id
+WHERE cancellation NOT IN ( 'Restaurant Cancellation', 'Customer Cancellation'))sub
+GROUP BY sub.order_id
+)
+
+SELECT MAX(pizza_count) AS max_num_pizza
+FROM t1
+
+--7. For each customer, how many delivered pizzas had at least 1 change and how many had no changes?
+SELECT customer_id, SUM(CASE WHEN exclusions <> ' ' OR extras <> ' ' THEN 1 ELSE 0 END) AS change,
+					SUM(CASE WHEN exclusions = ' ' AND extras = ' ' THEN 1 ELSE 0 END) AS no_change
+FROM #temp_customer_orders AS co
+INNER JOIN #temp_runner_table AS rt
+ON co.order_id = rt.order_id
+GROUP BY customer_id
+
+--8. How many pizzas were delivered that had both exclusions and extras?
+SELECT SUM(CASE WHEN exclusions <> ' ' AND extras <> ' ' THEN 1 ELSE 0 END) AS change
+FROM #temp_customer_orders AS co
+INNER JOIN #temp_runner_table AS rt
+ON co.order_id = rt.order_id
+GROUP BY cancellation
+HAVING cancellation NOT IN ( 'Restaurant Cancellation', 'Customer Cancellation')
+
+
+--9. What was the total volume of pizzas ordered for each hour of the day?
+SELECT DATEPART(hour, order_time) AS hour_of_the_day, COUNT(pizza_id) AS no_pizza
+FROM #temp_customer_orders
+GROUP BY datepart (hour, order_time)
+
+
+--10. What was the volume of orders for each day of the week?
+SELECT DATENAME (DW, order_time) AS day_of_the_week, COUNT(pizza_id) AS no_pizza
+FROM #temp_customer_orders
+GROUP BY DATENAME(DW, order_time)
