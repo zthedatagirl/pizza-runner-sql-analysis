@@ -9,3 +9,4 @@
 3. **Runner and Customer Experience** [Check it out](https://github.com/zthedatagirl/pizza-runner-sql-analysis/blob/8e439fa7591b9513a756fce86ed4e2cc5912b83d/Runner%20and%20Customer%20Experience)
 4. **Ingredient Optimization** [Check it out](https://github.com/zthedatagirl/pizza-runner-sql-analysis/blob/b2505d33aaab2665da490149aca684f3d2fc60e3/INGREDIENT%20OPTIMIZATION)
 5. **Pricings and Ratings** [Check it out](https://github.com/zthedatagirl/pizza-runner-sql-analysis/blob/b86344092698021dd81ab17ab6f2e39d9d646910/Pricings%20and%20Ratings)
+6. **Bonus question** [Check it out](https://github.com/zthedatagirl/pizza-runner-sql-analysis/blob/f4bac8ac44a8caef6c9878cef73db50a694c6e72/Bonus%20question)
